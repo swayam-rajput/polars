@@ -1504,6 +1504,65 @@ class Series:
         key: int | Series | np.ndarray[Any, Any] | Sequence[object] | tuple[object],
         value: Any,
     ) -> None:
+        """
+        Set one or more values in the Series by index or mask.
+
+        Parameters
+        ----------
+        key
+            Indexing key specifying the position(s) to assign:
+
+            - int
+                Assign a value at a single index.
+            - Series
+                Boolean mask or integer indices.
+            - numpy.ndarray
+                Boolean mask or integer indices.
+            - list or tuple
+                Sequence of integer indices.
+
+        value
+            Value(s) to assign. Sequence values are only supported for
+            numeric or temporal Series; otherwise a scalar value is required.
+
+        Notes
+        -----
+        This method mutates the Series in place.
+
+        Use of index-based assignment is often an anti-pattern in Polars, as it
+        can prevent query optimization. Consider using expression-based APIs
+        such as `pl.when().then().otherwise()` instead.
+
+        Examples
+        --------
+        >>> s = pl.Series("a", [1, 2, 3])
+        >>> s[1] = 10
+        >>> s
+        shape: (3,)
+        Series: 'a' [i64]
+        [1, 10, 3]
+
+        >>> s = pl.Series("a", [1, 2, 3])
+        >>> mask = pl.Series([True, False, True])
+        >>> s[mask] = 0
+        >>> s
+        shape: (3,)
+        Series: 'a' [i64]
+        [0, 2, 0]
+
+        >>> s = pl.Series("a", [1, 2, 3])
+        >>> s[[0, 2]] = 5
+        >>> s
+        shape: (3,)
+        Series: 'a' [i64]
+        [5, 2, 5]
+
+        >>> s = pl.Series("a", ["x", "y", "z"])
+        >>> s[[0, 1]] = ["a", "b"]
+        Traceback (most recent call last):
+        ...
+        TypeError: cannot set Series of dtype: Utf8 with list/tuple as value
+        """
         # do the single idx as first branch as those are likely in a tight loop
         if isinstance(key, int) and not isinstance(key, bool):
             self.scatter(key, value)
